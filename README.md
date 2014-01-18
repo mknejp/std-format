@@ -1,7 +1,7 @@
 std-format
 ==========
 
-Sample implementation of my idea in the std-proposals@isocpp.org mailing list regarding IOstream.
+Sample implementation of my concept for the [std-proposals@isocpp.org](https://groups.google.com/a/isocpp.org/forum/?fromgroups#!topic/std-proposals/89RQz9BP7mY) forum regarding IOstream.
 
 It is far from complete and still has unfinished parts and room for improvement but it can already be used to do very basic formatting.
 
@@ -63,7 +63,7 @@ std::string to_string(const MyType& x);
 ```
 The `flags` argument points to the substring located between the colon and the closing brace in the format string, enabling fully customized formatting directives. If one wants to avoid the temporary strings created by the single-argument overload then the ones accepting a `streambuf` allow outputting directly to the destination. The overloads accepting format flags have always precedence as correct output takes priority. 
 
-*Note: for completeness sake the streambuf overloads should probably be templated on basic_streambuf<CharT, Traits>.*
+*Note: for completeness sake the streambuf overloads should probably be templated on basic_streambuf&lt;CharT, Traits&gt;.*
 
 ### Open Issues
 
