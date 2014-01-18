@@ -76,4 +76,5 @@ Well, there is a lot. From the top of my head:
 - Write the more efficient `to_string()` overloads for primitive types as they will get used a lot
 - Discuss format string syntax
 - Available format flags for the various builtin/std types
+- Map the dfault supported flags to ios::fmtflags and provide a public parser for them
 
