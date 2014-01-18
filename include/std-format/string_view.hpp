@@ -1,9 +1,9 @@
 //
 //  string_view.hpp
-//  SystemGen
+//  std-format
 //
 //  Created by knejp on 17.1.14.
-//  Copyright (c) 2014 Miroslav Knejp. All rights reserved.
+//  Copyright (c) 2014 Miro Knejp. All rights reserved.
 //
 
 #ifndef std_format_string_view_hpp

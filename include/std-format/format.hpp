@@ -1,9 +1,9 @@
 //
 //  format.hpp
-//  SystemGen
+//  std-format
 //
 //  Created by knejp on 15.1.14.
-//  Copyright (c) 2014 Miroslav Knejp. All rights reserved.
+//  Copyright (c) 2014 Miro Knejp. All rights reserved.
 //
 
 #ifndef std_format_format_hpp
