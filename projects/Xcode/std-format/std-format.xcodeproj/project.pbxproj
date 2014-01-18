@@ -24,7 +24,7 @@
 
 /* Begin PBXFileReference section */
 		CF7E6EDE1889F2D500F11A7E /* std-format */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "std-format"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CF7E6EE11889F2D500F11A7E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = "std-format/main.cpp"; sourceTree = "<group>"; };
+		CF7E6EE11889F2D500F11A7E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../src/main.cpp; sourceTree = "<group>"; };
 		CF7E6EEB1889F30000F11A7E /* dispatch_to_string.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = dispatch_to_string.hpp; sourceTree = "<group>"; };
 		CF7E6EEC1889F30000F11A7E /* formatter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = formatter.hpp; sourceTree = "<group>"; };
 		CF7E6EED1889F30000F11A7E /* formatter_base.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = formatter_base.hpp; sourceTree = "<group>"; };
