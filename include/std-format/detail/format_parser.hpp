@@ -36,23 +36,35 @@ public:
 	 - \p first, \p last the format flags substring.
 	 
 	 \p tempBuffer points to a string which can be used for temporary storage where necessary to reduce the number of reallocations. If the \p options_in_temp argument to \p formatCallback is true then the \p offset and \p length parameters are relative to \p tempBuffer, not the input range! The buffer may be invalidated and rewritten as soon as the callback returns. If the data needs to be persisted it must be saved out of the temporary stirage.
+	 
+	 \p formatCallback can rely on the following preconditions:
+	 - \p arg is the positional index read from the format argument and is guaranteed to be in the range `[0, nargs)`
 	 */
 	template<class FormatIter, class Allocator, class Fn, class Gn>
 	void operator() (FormatIter first, FormatIter last, size_t nargs, basic_string<CharT, Traits, Allocator>& tempBuffer, Fn copyCallback, Gn formatCallback);
 	
 private:
+	static constexpr bool is_bidirectional(bidirectional_iterator_tag) { return true; }
+	static constexpr bool is_bidirectional(...) { return false; }
+	
 	/// Copy all characters to the stream buffer using `Derived::copy_to_output()`, transforming escaped braces until an unescaped brace is encountered and return its iterator or \p last if none was found.
 	template<class FormatIter, class Fn>
 	FormatIter copy_until_unescaped(FormatIter first, FormatIter last, Fn copyCallback);
 	/// Skip all characters until an unescaped brace is encountered and return its iterator or \p last if none was found.
 	template<class FormatIter>
 	FormatIter skip_until_unescaped(FormatIter first, FormatIter last);
-	/// Parse the integer starting at the given position and also return the iterator to the first position past the number.
+	/// Parse the unsigned integer starting at the given position and also return the iterator to the first position past the number.
 	template<class FormatIter>
-	pair<size_t, FormatIter> parseIndex(FormatIter first, FormatIter last);
+	pair<unsigned int, FormatIter> parseIndex(FormatIter first, FormatIter last, FormatIter start, size_t n);
+	/// Parse the signed(!) integer starting at the given position and also return the iterator to the first position past the number.
+	template<class FormatIter>
+	pair<int, FormatIter> parseWidth(FormatIter first, FormatIter last, FormatIter start, size_t n);
 	/// Find the next brace and return its iterator or \p last if none was found.
 	template<class FormatIter>
 	FormatIter nextBrace(FormatIter first, FormatIter last);
+	/// Throw if we unexpectedly reached the end
+	template<class FormatIter>
+	void throwIfEof(FormatIter pos, FormatIter end, FormatIter lbrace, FormatIter start, size_t n);
 };
 
 template<class CharT, class Traits>
@@ -60,58 +72,56 @@ template<class FormatIter, class Allocator, class Fn, class Gn>
 void std::experimental::detail::format_parser<CharT, Traits>
 	::operator() (FormatIter first, FormatIter last, size_t nargs, basic_string<CharT, Traits, Allocator>& tempBuffer, Fn copyCallback, Gn formatCallback)
 {
+	static_assert(is_bidirectional(typename iterator_traits<FormatIter>::iterator_category()), "format_parser requires bidirectional iterators");
+	
 	auto start = first;
 	int n = 0;
 	
 	for( ; first != last; ++n)
 	{
-		first = copy_until_unescaped(first, last, copyCallback);
-		if(first == last)
+		auto lbrace = copy_until_unescaped(first, last, copyCallback);
+		if(lbrace == last)
 			break;
-		if(CharT('{') != *first)
-		{
-			throw runtime_error{format("{0}: Invalid nesting of braces in format string.",
-									   first - start)};
-		}
-		auto rbrace = skip_until_unescaped(next(first), last);
-		if(rbrace == last || CharT('}') != *rbrace)
-		{
-			throw runtime_error{format("{0}: Missing brace to close parameter #{1} in format string (opening brace at {2}).",
-									   rbrace - start, n, first - start)};
-		}
-		first = next(first);
-		auto index = parseIndex(first, rbrace);
-		if(index.second == first)
-		{
-			throw runtime_error{format("{0}: Unrecognized index in format string parameter #{1}.",
-									   first - start, n)};
-		}
-		if(index.first >= nargs)
+		if(CharT('{') != *lbrace)
+			throw runtime_error{format("{0}: Invalid nesting of braces in format string.", lbrace - start)};
+		auto pos = ++lbrace;
+		auto rbrace = skip_until_unescaped(pos, last);
+		throwIfEof(rbrace, last, lbrace, start, n);
+		unsigned int index;
+		std::tie(index, pos) = parseIndex(pos, rbrace, start, n);
+		if(index >= nargs)
 		{
 			throw runtime_error{format("{0}: Index in format string parameter #{1} out of bounds ({2} specified, max allowed is {3}).",
-									   first - start, n, index.first, nargs - 1)};
+									   first - start, n, index, nargs - 1)};
 		}
-		if(CharT(':') == *index.second)
-			index.second = next(index.second);
-		else if(CharT('}') != *index.second)
+		int width = 0;
+		if(CharT(',') == *pos)
 		{
-			// If the index is not followed by a colon it must be closed immediately
-			throw runtime_error{format("{0}: Invalid character '{1}' after index in format string parameter #{2}.",
-									   index.second - start, *index.second, n)};
+			++pos;
+			std::tie(width, pos) = parseWidth(pos, rbrace, start, n);
+			
+		}
+		if(CharT(':') == *pos)
+			++pos;
+		else if(CharT('}') != *pos)
+		{
+			// If index/align is not followed by a colon it must be closed immediately
+			throw runtime_error{format("{0}: Unexpected character '{1}' after index/alignment in format string parameter #{2}.",
+									   pos - start, *pos, n)};
 		}
 
-		auto next_brace = nextBrace(index.second, rbrace);
+		auto next_brace = nextBrace(pos, rbrace);
 		if(next_brace != rbrace)
 		{
 			// The format options contain escaped braces.
 			// We need to skip over all those and assemble the escaped string in our temporary buffer before passing to formatCallback
 			tempBuffer.clear();
-			copy_until_unescaped(index.second, rbrace, [&] (FormatIter a, FormatIter b) { tempBuffer.append(a, b); });
-			formatCallback(n, index.first, 0, tempBuffer.size(), true);
+			copy_until_unescaped(pos, rbrace, [&] (FormatIter a, FormatIter b) { tempBuffer.append(a, b); });
+			formatCallback(n, index, width, 0, tempBuffer.size(), true);
 		}
 		else
-			formatCallback(n, index.first, distance(start, index.second), distance(index.second, rbrace), false);
-		first = next(rbrace);
+			formatCallback(n, index, width, pos - start, rbrace - pos, false);
+		first = ++rbrace;
 	}
 }
 
@@ -128,10 +138,10 @@ auto std::experimental::detail::format_parser<CharT, Traits>
 			return last;
 		else
 		{
-			if(*next(brace) == *brace)
+			if(*(brace + 1) == *brace)
 			{
-				copyCallback(brace, next(brace));
-				first = next(brace, 2);
+				copyCallback(brace, brace + 1);
+				first = brace + 2;
 			}
 			else
 				return brace;
@@ -149,11 +159,58 @@ auto std::experimental::detail::format_parser<CharT, Traits>
 		auto brace = nextBrace(first, last);
 		if(brace == last)
 			return last;
-		else if(*next(brace) == *brace)
-			first = next(brace, 2);
+		else if(*(brace + 1) == *brace)
+			first = brace + 2;
 			else
 				return brace;
 	}
+}
+
+template<class CharT, class Traits>
+template<class FormatIter>
+auto std::experimental::detail::format_parser<CharT, Traits>
+	::parseIndex(FormatIter first, FormatIter last, FormatIter start, size_t n) -> pair<unsigned int, FormatIter>
+{
+	if(first == last || CharT('0') > *first || CharT('9') < *first)
+		throw runtime_error{format("{0}: Unexpected character '{1}' in format string parameter #{2} (index expected).", first - start, *first, n)};
+
+	unsigned int i = 0;
+	for( ; first != last; ++first)
+	{
+		auto ch = *first;
+		if(CharT('0') > ch || CharT('9') < ch)
+			break;
+		i = i * 10 + (ch - CharT('0'));
+	}
+	return { i, first };
+}
+
+template<class CharT, class Traits>
+template<class FormatIter>
+auto std::experimental::detail::format_parser<CharT, Traits>
+	::parseWidth(FormatIter first, FormatIter last, FormatIter start, size_t n) -> pair<int, FormatIter>
+{
+	if(first == last)
+		throw runtime_error{format("{0}: Unexpected character '{1}' in format string parameter #{2} (alignment expected).", first - start, *first, n)};
+	
+	bool neg = false;
+	if(CharT('-') == *first)
+	{
+		neg = true;
+		++first;
+	}
+	if(first == last || CharT('0') > *first || CharT('9') < *first)
+		throw runtime_error{format("{0}: Unexpected character '{1}' in format string parameter #{2} (alignment expected).", first - start, *first, n)};
+	
+	int i = 0;
+	for( ; first != last; ++first)
+	{
+		auto ch = *first;
+		if(CharT('0') > ch || CharT('9') < ch)
+			break;
+		i = i * 10 + (ch - CharT('0'));
+	}
+	return { neg ? -i : i, first };
 }
 
 template<class CharT, class Traits>
@@ -167,18 +224,13 @@ auto std::experimental::detail::format_parser<CharT, Traits>
 
 template<class CharT, class Traits>
 template<class FormatIter>
-auto std::experimental::detail::format_parser<CharT, Traits>
-	::parseIndex(FormatIter first, FormatIter last) -> pair<size_t, FormatIter>
+void std::experimental::detail::format_parser<CharT, Traits>
+	::throwIfEof(FormatIter pos, FormatIter end, FormatIter lbrace, FormatIter start, size_t n)
 {
-	size_t i = 0;
-	for( ; first != last; ++first)
-	{
-		auto ch = *first;
-		if(CharT('0') > ch || CharT('9') < ch)
-			break;
-		i = i * 10 + (ch - CharT('0'));
-	}
-	return { i, first };
+	if(pos == end)
+		throw runtime_error{format("{0}: Reached unexpected end of format string while parsing format parameter #{1} (opening brace at {2})",
+								   pos - start, n, lbrace - start)};
 }
+
 
 #endif // std_format_detail_parser_hpp

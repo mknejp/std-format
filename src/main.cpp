@@ -47,8 +47,9 @@ int main()
 	
 	auto app = make_format_appender(back_inserter(v));
 	
-	app = format(in_place, app, u8"{0:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
-	app = format(in_place, app, u8"{0:a{{sdf} {2} {1}\n", test::PrintOptions(), 2, 3);
-	app = format(in_place, app, u8"{0} {1:dfgh} {2}\n", 1, test::PrintOptions(), 3);
+	app = format(in_place, app, u8"{0,123:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
+	app = format(in_place, app, u8"{0,-123:a{{sdf} {2} {1}\n", test::PrintOptions(), 2, 3);
+	app = format(in_place, app, u8"{0,-0} {1:dfgh} {2}\n", 1, test::PrintOptions(), 3);
+//	app = format(in_place, app, u8"{0456789876543456789876543}\n", 1);
 	copy(v.begin(), v.end(), ostream_iterator<char>(cout));
 }
