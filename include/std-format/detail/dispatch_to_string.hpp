@@ -16,7 +16,9 @@ namespace std { namespace experimental
 		template<class T>
 		using enable_for = typename conditional<false, T, void>::type;
 		
-		using std::to_string; // Required to find overloads for fundamental types
+		// Required to find overloads for fundamental types
+		using std::to_string;
+		using std::experimental::to_string;
 		
 		// Single argument overload returning a string without options
 		template<class Arg, class Appender, class FmtFlags>
