@@ -16,23 +16,12 @@ using namespace experimental;
 
 namespace test
 {
-	struct Foo
+	struct PrintOptions
 	{
-		int i;
 	};
 	
-	string to_string(const Foo& f)
-	{
-		return std::to_string(f.i * f.i);
-	}
-	template<class T>
-	format_appender<T> to_string(const Foo& f, format_appender<T> app)
-	{
-		auto s = std::to_string(f.i + f.i);
-		return app.append(s.data(), s.size());
-	}
 	template<class T, class CharT, class Traits>
-	format_appender<T> to_string(const Foo& f, format_appender<T> app, basic_string_view<CharT, Traits> options)
+	format_appender<T> to_string(PrintOptions, format_appender<T> app, basic_string_view<CharT, Traits> options)
 	{
 		return app.append(options.data(), options.size());
 	}
@@ -56,10 +45,10 @@ int main()
 	
 	std::vector<char> v;
 	
-	string dest = "4";
 	auto app = make_format_appender(back_inserter(v));
 	
-	app = format(in_place, app, u8"{0:asdf} {2} {1}\n", test::Foo{5}, 2, 3);
-	app = format(in_place, app, u8"{0} {1} {2}\n", 1, 2, 3);
+	app = format(in_place, app, u8"{0:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
+	app = format(in_place, app, u8"{0:a{{sdf} {2} {1}\n", test::PrintOptions(), 2, 3);
+	app = format(in_place, app, u8"{0} {1:dfgh} {2}\n", 1, test::PrintOptions(), 3);
 	copy(v.begin(), v.end(), ostream_iterator<char>(cout));
 }

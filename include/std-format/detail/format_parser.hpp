@@ -34,9 +34,11 @@ public:
 	 - \p index is the running index of the argument,
 	 - \p argindex is the positional argument in the range [0; nargs) and
 	 - \p first, \p last the format flags substring.
+	 
+	 \p tempBuffer points to a string which can be used for temporary storage where necessary to reduce the number of reallocations. If the \p options_in_temp argument to \p formatCallback is true then the \p offset and \p length parameters are relative to \p tempBuffer, not the input range! The buffer may be invalidated and rewritten as soon as the callback returns. If the data needs to be persisted it must be saved out of the temporary stirage.
 	 */
-	template<class FormatIter, class Fn, class Gn>
-	void operator() (FormatIter first, FormatIter last, size_t nargs, Fn copyCallback, Gn formatCallback);
+	template<class FormatIter, class Allocator, class Fn, class Gn>
+	void operator() (FormatIter first, FormatIter last, size_t nargs, basic_string<CharT, Traits, Allocator>& tempBuffer, Fn copyCallback, Gn formatCallback);
 	
 private:
 	/// Copy all characters to the stream buffer using `Derived::copy_to_output()`, transforming escaped braces until an unescaped brace is encountered and return its iterator or \p last if none was found.
@@ -54,9 +56,9 @@ private:
 };
 
 template<class CharT, class Traits>
-template<class FormatIter, class Fn, class Gn>
+template<class FormatIter, class Allocator, class Fn, class Gn>
 void std::experimental::detail::format_parser<CharT, Traits>
-	::operator() (FormatIter first, FormatIter last, size_t nargs, Fn copyCallback, Gn formatCallback)
+	::operator() (FormatIter first, FormatIter last, size_t nargs, basic_string<CharT, Traits, Allocator>& tempBuffer, Fn copyCallback, Gn formatCallback)
 {
 	auto start = first;
 	int n = 0;
@@ -93,11 +95,23 @@ void std::experimental::detail::format_parser<CharT, Traits>
 			index.second = next(index.second);
 		else if(CharT('}') != *index.second)
 		{
+			// If the index is not followed by a colon it must be closed immediately
 			throw runtime_error{format("{0}: Invalid character '{1}' after index in format string parameter #{2}.",
 									   index.second - start, *index.second, n)};
 		}
+
+		auto next_brace = nextBrace(index.second, rbrace);
+		if(next_brace != rbrace)
+		{
+			// The format options contain escaped braces.
+			// We need to skip over all those and assemble the escaped string in our temporary buffer before passing to formatCallback
+			tempBuffer.clear();
+			copy_until_unescaped(index.second, rbrace, [&] (FormatIter a, FormatIter b) { tempBuffer.append(a, b); });
+			formatCallback(n, index.first, 0, tempBuffer.size(), true);
+		}
+		else
+			formatCallback(n, index.first, distance(start, index.second), distance(index.second, rbrace), false);
 		first = next(rbrace);
-		formatCallback(n, index.first, index.second, rbrace);
 	}
 }
 
