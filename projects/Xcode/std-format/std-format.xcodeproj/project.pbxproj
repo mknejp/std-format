@@ -23,11 +23,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CF0EE713188E133200331B63 /* appender.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = appender.hpp; sourceTree = "<group>"; };
+		CF0EE714188E528000331B63 /* type_traits.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = type_traits.hpp; sourceTree = "<group>"; };
 		CF7E6EDE1889F2D500F11A7E /* std-format */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "std-format"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF7E6EE11889F2D500F11A7E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../src/main.cpp; sourceTree = "<group>"; };
 		CF7E6EEB1889F30000F11A7E /* dispatch_to_string.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = dispatch_to_string.hpp; sourceTree = "<group>"; };
 		CF7E6EEC1889F30000F11A7E /* formatter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = formatter.hpp; sourceTree = "<group>"; };
-		CF7E6EED1889F30000F11A7E /* formatter_base.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = formatter_base.hpp; sourceTree = "<group>"; };
+		CF7E6EED1889F30000F11A7E /* format_parser.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = format_parser.hpp; sourceTree = "<group>"; };
 		CF7E6EEE1889F30000F11A7E /* immediate_formatter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = immediate_formatter.hpp; sourceTree = "<group>"; };
 		CF7E6EEF1889F30000F11A7E /* format.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = format.hpp; sourceTree = "<group>"; };
 		CF7E6EF01889F30000F11A7E /* integer_sequence.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = integer_sequence.hpp; sourceTree = "<group>"; };
@@ -69,6 +71,7 @@
 				CF7E6EEF1889F30000F11A7E /* format.hpp */,
 				CF7E6EF01889F30000F11A7E /* integer_sequence.hpp */,
 				CF7E6EF11889F30000F11A7E /* string_view.hpp */,
+				CF0EE714188E528000331B63 /* type_traits.hpp */,
 			);
 			name = "std-format";
 			path = "../../../include/std-format";
@@ -77,9 +80,10 @@
 		CF7E6EEA1889F30000F11A7E /* detail */ = {
 			isa = PBXGroup;
 			children = (
+				CF0EE713188E133200331B63 /* appender.hpp */,
 				CF7E6EEB1889F30000F11A7E /* dispatch_to_string.hpp */,
 				CF7E6EEC1889F30000F11A7E /* formatter.hpp */,
-				CF7E6EED1889F30000F11A7E /* formatter_base.hpp */,
+				CF7E6EED1889F30000F11A7E /* format_parser.hpp */,
 				CF7E6EEE1889F30000F11A7E /* immediate_formatter.hpp */,
 			);
 			path = detail;
@@ -264,6 +268,7 @@
 				CF7E6EE91889F2D500F11A7E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
