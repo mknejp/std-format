@@ -78,6 +78,30 @@ namespace std { namespace experimental
 		using string_type = basic_string<char_type<T>, traits_type<T>, Allocator>;
 	}
 	
+	template<class CharT, class Traits>
+	void validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs);
+	
+	template<class... Args, class CharT, class Traits>
+	void validate_format(basic_string_view<CharT, Traits> fmt) { validate_format(fmt, sizeof...(Args)); }
+	
+	template<class CharT>
+	void validate_format(const CharT* fmt, size_t nargs) { validate_format(basic_string_view<CharT>{fmt}, nargs); }
+	
+	template<class... Args, class CharT>
+	void validate_format(const CharT* fmt) { validate_format<Args...>(basic_string_view<CharT>{fmt}); }
+	
+	template<class CharT, class Traits>
+	bool validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs, nothrow_t) noexcept;
+	
+	template<class... Args, class CharT, class Traits>
+	bool validate_format(basic_string_view<CharT, Traits> fmt, nothrow_t) noexcept { return validate_format(fmt, sizeof...(Args), nothrow); }
+	
+	template<class CharT>
+	bool validate_format(const CharT* fmt, size_t nargs, nothrow_t) noexcept { return validate_format(basic_string_view<CharT>{fmt}, nargs, nothrow); }
+	
+	template<class... Args, class CharT>
+	bool validate_format(const CharT* fmt, nothrow_t) noexcept { return validate_format<Args...>(basic_string_view<CharT>{fmt}, nothrow); }
+	
 	/// \name Overloads accepting `formatter`
 	//@{
 	
@@ -179,6 +203,7 @@ namespace std { namespace experimental
 // Require previous declarations of public names.
 #include <std-format/detail/appender.hpp>
 #include <std-format/detail/format_parser.hpp>
+#include <std-format/detail/format_validator.hpp>
 #include <std-format/detail/immediate_formatter.hpp>
 //#include <std-format/detail/formatter.hpp> // Currently disabled until the inline format case is mature enough and has a more or less stable implementation
 
@@ -233,6 +258,21 @@ auto std::experimental::format(in_place_t, Destination& dest, const FormatSource
 	detail::format_impl(app, fmt, args...);
 	return dest;
 }
+
+template<class CharT, class Traits>
+void std::experimental::validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs)
+{
+	detail::format_validator<CharT, Traits> v{fmt};
+	v(nargs);
+}
+
+template<class CharT, class Traits>
+bool std::experimental::validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs, nothrow_t) noexcept
+{
+	detail::format_validator<CharT, Traits> v{fmt};
+	return v(nargs, nothrow);
+}
+
 /*
 template<class CharT, class... Args>
 auto std::experimental::format(const CharT* fmt, const Args&... args) -> basic_string<CharT>

@@ -45,6 +45,16 @@ int main()
 	
 	std::vector<char> v;
 	
+	cout << u8"{0456789876543456789876543}" << " - " << boolalpha << validate_format(u8"{0456789876543456789876543}", 1, nothrow) << "\n";
+	
+	cout << u8"{0,123:}}as{{df{{}}} {2} {1}" << " - " << boolalpha << validate_format(u8"{0,123:}}as{{df{{}}} {2} {1}", 1, nothrow) << "\n";
+	cout << u8"{0,123:}}as{{df{{}}} {2} {1}" << " - " << boolalpha << validate_format(u8"{0,123:}}as{{df{{}}} {2} {1}", 2, nothrow) << "\n";
+	cout << u8"{0,123:}}as{{df{{}}} {2} {1}" << " - " << boolalpha << validate_format(u8"{0,123:}}as{{df{{}}} {2} {1}", 3, nothrow) << "\n";
+
+	cout << u8"{0,123:}}as{{df{{}}} {2} {1}" << " - " << boolalpha << validate_format<int>(u8"{0,123:}}as{{df{{}}} {2} {1}", nothrow) << "\n";
+	cout << u8"{0,123:}}as{{df{{}}} {2} {1}" << " - " << boolalpha << validate_format<int, int>(u8"{0,123:}}as{{df{{}}} {2} {1}", nothrow) << "\n";
+	cout << u8"{0,123:}}as{{df{{}}} {2} {1}" << " - " << boolalpha << validate_format<int, int, int>(u8"{0,123:}}as{{df{{}}} {2} {1}", nothrow) << "\n";
+
 	auto app = make_format_appender(back_inserter(v));
 	
 	app = format(in_place, app, u8"{0,123:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
