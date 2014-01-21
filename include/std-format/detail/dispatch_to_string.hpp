@@ -83,7 +83,7 @@ namespace std { namespace experimental
 									integral_constant<bool, b2> has_overload1)
 		{
 			auto string = to_string(arg, flags);
-			return app.append(string.data(), string.size());
+			return app.append(string);
 		}
 		
 		// Below do not accept format arguments
@@ -105,20 +105,20 @@ namespace std { namespace experimental
 									integral_constant<bool, true> has_overload1)
 		{
 			auto string = to_string(arg);
-			return app.append(string.data(), string.size());
+			return app.append(string);
 		}
 		
 		// There is no to_string for basic_string and basic_string_view, handle it internally
 		template<class CharT, class Traits, class Appender, class FmtFlags>
 		Appender dispatch_to_string(const basic_string<CharT, Traits>& arg, Appender& app, FmtFlags flags)
 		{
-			return app.append(arg.data(), arg.size());
+			return app.append(arg);
 		}
 		
 		template<class CharT, class Traits, class Appender, class FmtFlags>
 		Appender dispatch_to_string(const basic_string_view<CharT, Traits>& arg, Appender& app, FmtFlags flags)
 		{
-			return app.append(arg.data(), arg.size());
+			return app.append(arg);
 		}
 		
 		template<class Arg, class Appender, class FmtFlags>

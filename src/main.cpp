@@ -26,13 +26,13 @@ namespace test
 		return std::to_string(f.i * f.i);
 	}
 	template<class T>
-	appender<T> to_string(const Foo& f, appender<T> app)
+	format_appender<T> to_string(const Foo& f, format_appender<T> app)
 	{
 		auto s = std::to_string(f.i + f.i);
 		return app.append(s.data(), s.size());
 	}
 	template<class T, class CharT, class Traits>
-	appender<T> to_string(const Foo& f, appender<T> app, basic_string_view<CharT, Traits> options)
+	format_appender<T> to_string(const Foo& f, format_appender<T> app, basic_string_view<CharT, Traits> options)
 	{
 		return app.append(options.data(), options.size());
 	}
@@ -53,7 +53,13 @@ int main()
 	format(*cout.rdbuf(), fmt, 1, 2, 3.45, 4.0f, string("hi"));
 	format(s, fmt, 1, 2, 3.45, 4.0f, string("hi"));
 	format(cout, fmt, 2, 1, 2.45, 5.0f, string("ho"));*/
+	
+	std::vector<char> v;
+	
 	string dest = "4";
-	cout << format(u8"{0:asdf} {2} {1}", test::Foo{5}, 2, 3) << endl;
-	format(in_place, cout, u8"{0} {1} {2}\n", 1, 2, 3);
+	auto app = make_format_appender(back_inserter(v));
+	
+	app = format(in_place, app, u8"{0:asdf} {2} {1}\n", test::Foo{5}, 2, 3);
+	app = format(in_place, app, u8"{0} {1} {2}\n", 1, 2, 3);
+	copy(v.begin(), v.end(), ostream_iterator<char>(cout));
 }

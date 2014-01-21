@@ -180,7 +180,7 @@ namespace std { namespace experimental
 #include <std-format/detail/appender.hpp>
 #include <std-format/detail/format_parser.hpp>
 #include <std-format/detail/immediate_formatter.hpp>
-//#include <std-format/detail/formatter.hpp>
+//#include <std-format/detail/formatter.hpp> // Currently disabled until the inline format case is mature enough and has a more or less stable implementation
 
 namespace std { namespace experimental
 {
@@ -229,7 +229,7 @@ template<class Destination, class FormatSource, class... Args>
 auto std::experimental::format(in_place_t, Destination& dest, const FormatSource& fmt, const Args&... args)
 	-> Destination&
 {
-	auto app = appender_for(dest);
+	auto app = make_format_appender(dest);
 	detail::format_impl(app, fmt, args...);
 	return dest;
 }
