@@ -43,6 +43,16 @@ namespace std { namespace experimental
 	
 	namespace detail
 	{
+		class write_counter
+		{
+		public:
+			size_t write_count() const { return _count; }
+			void increment(size_t n = 1) { _count += n; }
+			
+		private:
+			size_t _count = 0;
+		};
+		
 		template<class Derived, class OutIter>
 		class iterator_appender
 		{
@@ -56,6 +66,7 @@ namespace std { namespace experimental
 			Derived& append(CharT ch)
 			{
 				*_iter++ = move(ch);
+				static_cast<Derived&>(*this).increment_write_counter(1);
 				return static_cast<Derived&>(*this);
 			}
 			
@@ -64,6 +75,7 @@ namespace std { namespace experimental
 			{
 				assert(str && "NULL buffer passed to append()");
 				_iter = copy_n(str, len, _iter);
+				static_cast<Derived&>(*this).increment_write_counter(len);
 				return static_cast<Derived&>(*this);
 			}
 			
@@ -91,6 +103,7 @@ namespace std { namespace experimental
 				if(_first == _last)
 					throw runtime_error{"buffer overflow in format_appender"};
 				*_first++ = move(ch);
+				static_cast<Derived&>(*this).increment_write_counter(1);
 				return static_cast<Derived&>(*this);
 			}
 			
@@ -98,18 +111,20 @@ namespace std { namespace experimental
 			{
 				assert(str && "NULL buffer passed to append()");
 				append_block(str, len, typename iterator_traits<Iter>::iterator_category());
+				static_cast<Derived&>(*this).increment_write_counter(len);
 				return static_cast<Derived&>(*this);
 			}
 			template<class CharT, class Traits>
 			Derived& append(const basic_string_view<CharT, Traits>& str) { return append(str.data(), str.size()); }
 			template<class CharT, class Traits, class Allocator>
 			Derived& append(const basic_string<CharT, Traits, Allocator>& str) { return append(str.data(), str.size()); }
-			
+
 		private:
 			void append_block(const value_type* str, size_t len, random_access_iterator_tag)
 			{
 				if(distance(_first, _last) < len)
 					throw runtime_error{"buffer overflow in format_appender"};
+				static_cast<Derived&>(*this).increment_write_counter(1);
 				_first = copy_n(str, len, _first);
 			}
 			void append_block(const value_type* str, size_t len, ...)
@@ -138,6 +153,7 @@ namespace std { namespace experimental
 				*_iter++ = std::move(ch);
 				if(_iter.failed())
 					throw runtime_error{"buffer overflow in format_appender"};
+				static_cast<Derived&>(*this).increment_write_counter(1);
 				return static_cast<Derived&>(*this);
 			}
 			
@@ -147,6 +163,7 @@ namespace std { namespace experimental
 				_iter = copy_n(str, len, _iter);
 				if(_iter.failed())
 					throw runtime_error{"buffer overflow in format_appender"};
+				static_cast<Derived&>(*this).increment_write_counter(len);
 				return static_cast<Derived&>(*this);
 			}
 			Derived& append(const basic_string_view<CharT, Traits>& str) { return append(str.data(), str.size()); }
@@ -170,6 +187,7 @@ namespace std { namespace experimental
 			{
 				if(Traits::eq_int_type(_buf->sputc(ch), Traits::eof()))
 					throw runtime_error{"Error writing to ostreambuf."};
+				static_cast<Derived&>(*this).increment_write_counter(1);
 				return static_cast<Derived&>(*this);
 			}
 			
@@ -178,18 +196,19 @@ namespace std { namespace experimental
 				assert(str && "NULL buffer passed to append()");
 				if(_buf->sputn(str, len) != len)
 					throw runtime_error{"buffer overflow in format_appender"};
+				static_cast<Derived&>(*this).increment_write_counter(len);
 				return static_cast<Derived&>(*this);
 			}
 			Derived& append(const basic_string_view<CharT, Traits>& str) { return append(str.data(), str.size()); }
 			template<class Allocator>
 			Derived& append(const basic_string<CharT, Traits, Allocator>& str) { return append(str.data(), str.size()); }
-			
+
 		private:
 			basic_streambuf<CharT, Traits>* _buf;
 		};
 		
 		template<class Derived, class CharT, class Traits, class Allocator>
-		class string_appender
+		class string_appender : public write_counter
 		{
 		public:
 			using value_type = CharT;
@@ -198,7 +217,8 @@ namespace std { namespace experimental
 
 			Derived& append(CharT ch)
 			{
-				_str->append(ch);
+				_str->append(1, ch);
+				static_cast<Derived&>(*this).increment_write_counter(1);
 				return static_cast<Derived&>(*this);
 			}
 			
@@ -206,12 +226,13 @@ namespace std { namespace experimental
 			{
 				assert(str && "NULL buffer passed to append()");
 				_str->append(str, len);
+				static_cast<Derived&>(*this).increment_write_counter(len);
 				return static_cast<Derived&>(*this);
 			}
 			Derived& append(const basic_string_view<CharT, Traits>& str) { return append(str.data(), str.size()); }
 			template<class Allocator2>
 			Derived& append(const basic_string<CharT, Traits, Allocator2>& str) { return append(str.data(), str.size()); }
-
+			
 		private:
 			basic_string<CharT, Traits, Allocator>* _str;
 		};
@@ -251,20 +272,28 @@ namespace std { namespace experimental
 		using Base = decltype(detail::select_appender<format_appender<Sink>>(declval<Sink>()));
 		
 	public:
+		using type = format_appender<Sink>;
 		using Base::Base;
+		
+		size_t write_count() const { return _count.write_count(); }
+		
+	private:
+		friend Base;
+		
+		void increment_write_counter(size_t n) { _count.increment(n); }
+		
+		detail::write_counter _count;
 	};
 	
 	template<class Sink>
 	class format_appender<format_appender<Sink>> : public format_appender<Sink>
 	{
 	public:
-		format_appender(format_appender<Sink>& base) : format_appender<Sink>(base) { }
+		using type = typename format_appender<Sink>::type;
 	};
 	
 	template<class T>
-	format_appender<T> make_format_appender(T& t) { return { t }; }
-	template<class T>
-	format_appender<T> make_format_appender(T&& t) { return { t }; }
+	typename format_appender<decay_t<T>>::type make_format_appender(T&& t) { return { forward<T>(t) }; }
 	
 }} // namespace std::experimental
 

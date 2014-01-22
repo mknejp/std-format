@@ -64,16 +64,43 @@ public:
 	template<class Appender>
 	Appender operator() (Appender app, const Args&... args)
 	{
-		format_delegates<Tuple, Appender, format_type, make_index_sequence<sizeof...(Args)>> delegates;
+		basic_string<CharT, Traits> temp; // This buffer is used for all temporaries we need, thus hopefully minimizing the number of reallocations
+		
+		format_delegates<Tuple, Appender, format_type, make_index_sequence<sizeof...(Args)>> delegates1;
+		format_delegates<Tuple, decltype(make_format_appender(temp)), format_type, make_index_sequence<sizeof...(Args)>> delegates2;
+		
 		auto values = std::tie(args...);
 		detail::format_parser<value_type, traits_type> parser;
-		basic_string<CharT, Traits> tempBuffer; // This buffer is used for all temporaries we need, thus hopefully minimizing the number of reallocations
-		parser(_fmt.begin(), _fmt.end(), sizeof...(Args), tempBuffer,
+		parser(_fmt.begin(), _fmt.end(), sizeof...(Args),
 			   [&] (format_iterator first, format_iterator last) { app.append(format_type{first, last - first}); },
-			   [&] (unsigned int n, unsigned int arg, int width, size_t offset, size_t length, bool options_in_temp)
+			   [&] (unsigned int n, unsigned int arg, int width, basic_string_view<CharT, Traits> options)
 			   {
-				   auto flags = format_type{ options_in_temp ? tempBuffer.data() + offset : _fmt.data() + offset, length };
-				   app = delegates[arg](values, app, flags);
+				   if(width > 0)
+				   {
+					   // Positive width means right alignment.
+					   // In that case we need to format the substring first to determine its length so we can add the padding.
+					   // Padding is done using the space ' ' character.
+					   temp.clear();
+					   delegates2[arg](values, make_format_appender(temp), options);
+					   for (auto i = temp.size(); i < width; ++i)
+						   app.append(CharT(' '));
+					   app.append(temp);
+				   }
+				   else if(width < 0)
+				   {
+					   // Otherwise we can fill the destination directly and append padding if necessary
+					   // Padding is done using the space ' ' character.
+					   auto start = app.write_count();
+					   app = delegates1[arg](values, app, options);
+					   auto end = app.write_count();
+					   while(end < start - width)
+					   {
+						   app.append(CharT(' '));
+						   ++end;
+					   }
+				   }
+				   else
+					   app = delegates1[arg](values, app, options);
 			   }
 		);
 		return app;

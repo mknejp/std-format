@@ -40,8 +40,8 @@ public:
 	 \p formatCallback can rely on the following preconditions:
 	 - \p arg is the positional index read from the format argument and is guaranteed to be in the range `[0, nargs)`
 	 */
-	template<class FormatIter, class Allocator, class Fn, class Gn>
-	void operator() (FormatIter first, FormatIter last, size_t nargs, basic_string<CharT, Traits, Allocator>& tempBuffer, Fn copyCallback, Gn formatCallback);
+	template<class FormatIter, class Fn, class Gn>
+	void operator() (FormatIter first, FormatIter last, size_t nargs, Fn copyCallback, Gn formatCallback);
 	
 private:
 	static constexpr bool is_bidirectional(bidirectional_iterator_tag) { return true; }
@@ -68,12 +68,13 @@ private:
 };
 
 template<class CharT, class Traits>
-template<class FormatIter, class Allocator, class Fn, class Gn>
+template<class FormatIter, class Fn, class Gn>
 void std::experimental::detail::format_parser<CharT, Traits>
-	::operator() (FormatIter first, FormatIter last, size_t nargs, basic_string<CharT, Traits, Allocator>& tempBuffer, Fn copyCallback, Gn formatCallback)
+	::operator() (FormatIter first, FormatIter last, size_t nargs, Fn copyCallback, Gn formatCallback)
 {
 	static_assert(is_bidirectional(typename iterator_traits<FormatIter>::iterator_category()), "format_parser requires bidirectional iterators");
 	
+	basic_string<CharT, Traits> temp; // This buffer is used for all temporaries we need, thus hopefully minimizing the number of reallocations
 	auto start = first;
 	int n = 0;
 	
@@ -115,12 +116,12 @@ void std::experimental::detail::format_parser<CharT, Traits>
 		{
 			// The format options contain escaped braces.
 			// We need to skip over all those and assemble the escaped string in our temporary buffer before passing to formatCallback
-			tempBuffer.clear();
-			copy_until_unescaped(pos, rbrace, [&] (FormatIter a, FormatIter b) { tempBuffer.append(a, b); });
-			formatCallback(n, index, width, 0, tempBuffer.size(), true);
+			temp.clear();
+			copy_until_unescaped(pos, rbrace, [&] (FormatIter a, FormatIter b) { temp.append(a, b); });
+			formatCallback(n, index, width, { temp.data(), temp.size() });
 		}
 		else
-			formatCallback(n, index, width, pos - start, rbrace - pos, false);
+			formatCallback(n, index, width, { pos, rbrace - pos });
 		first = ++rbrace;
 	}
 }
