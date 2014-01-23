@@ -105,13 +105,25 @@ namespace std { namespace experimental
 	/// \name Overloads accepting `formatter`
 	//@{
 	
+	template<class Result, class FormatSource, class... Args>
+	auto format(const FormatSource& fmt, const Args&... args) -> Result;
+	
 	template<class FormatSource, class... Args>
 	auto format(const FormatSource& fmt, const Args&... args)
-		-> detail::string_type<FormatSource, detail::allocator_type<FormatSource>>;
+		-> detail::string_type<FormatSource, detail::allocator_type<FormatSource>>
+	{
+		return format<detail::string_type<FormatSource, detail::allocator_type<FormatSource>>>(fmt, args...);
+	}
+	
+	template<class Result, class Allocator, class FormatSource, class... Args>
+	auto format(allocator_arg_t, const Allocator& alloc, const FormatSource& fmt, const Args&... args) -> Result;
 	
 	template<class Allocator, class FormatSource, class... Args>
 	auto format(allocator_arg_t, const Allocator& alloc, const FormatSource& fmt, const Args&... args)
-		-> detail::string_type<FormatSource, Allocator>;
+		-> detail::string_type<FormatSource, Allocator>
+	{
+		return format<detail::string_type<FormatSource, Allocator>>(allocator_arg, alloc, fmt, args...);
+	}
 	
 	template<class Destination, class FormatSource, class... Args>
 	auto format(in_place_t, Destination& dest, const FormatSource& fmt, const Args&... args)
@@ -233,19 +245,17 @@ namespace std { namespace experimental
 	
 }} // namespace std::experimental
 
-template<class FormatSource, class... Args>
-auto std::experimental::format(const FormatSource& fmt, const Args&... args)
-	-> detail::string_type<FormatSource, detail::allocator_type<FormatSource>>
+template<class Result, class FormatSource, class... Args>
+auto std::experimental::format(const FormatSource& fmt, const Args&... args) -> Result
 {
 	using Allocator = detail::allocator_type<FormatSource>;
-	return format(allocator_arg, Allocator{}, fmt, args...);
+	return format<Result>(allocator_arg, Allocator{}, fmt, args...);
 }
 
-template<class Allocator, class FormatSource, class... Args>
-auto std::experimental::format(allocator_arg_t, const Allocator& alloc, const FormatSource& fmt, const Args&... args)
-	-> detail::string_type<FormatSource, Allocator>
+template<class Result, class Allocator, class FormatSource, class... Args>
+auto std::experimental::format(allocator_arg_t, const Allocator& alloc, const FormatSource& fmt, const Args&... args) -> Result
 {
-	detail::string_type<FormatSource, Allocator> out{alloc};
+	Result out{alloc};
 	format(in_place, out, fmt, args...);
 	return out;
 }

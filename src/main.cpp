@@ -57,6 +57,12 @@ int main()
 
 	auto app = make_format_appender(back_inserter(v));
 	
+	format("{0}\n", 1);
+	format<string>("{0}\n", 1);
+	
+	format(allocator_arg, allocator<char>{}, "{0}\n", 1);
+	format<string>(allocator_arg, allocator<char>{}, "{0}\n", 1);
+	
 	app = format(in_place, app, u8"{0,10:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
 	app = format(in_place, app, u8"{0,-10:a{{sdf} {2} {1}\n", test::PrintOptions(), 2, 3);
 	app = format(in_place, app, u8"{0,-10} {1:dfgh} {2}\n", 1, test::PrintOptions(), 3);

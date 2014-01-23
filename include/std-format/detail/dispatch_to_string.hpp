@@ -45,7 +45,7 @@ namespace std { namespace experimental
 		// Writes directly to app without options
 		template<class Arg, class Appender, class FmtFlags>
 		using overload2_sig =
-			decltype(to_string(declval<const Arg&>(), declval<Appender&>()));
+			decltype(to_string(declval<const Arg&>(), declval<Appender>()));
 		
 		template<class Arg, class Appender, class FmtFlags>
 		true_type has_overload2(enable_for<overload2_sig<Arg, Appender, FmtFlags>>*) { return { }; }
@@ -56,7 +56,7 @@ namespace std { namespace experimental
 		// Writes directly to app with options
 		template<class Arg, class Appender, class FmtFlags>
 		using overload2_opt_sig =
-			decltype(to_string(declval<const Arg&>(), declval<Appender&>(), declval<FmtFlags>()));
+			decltype(to_string(declval<const Arg&>(), declval<Appender>(), declval<FmtFlags>()));
 		
 		template<class Arg, class Appender, class FmtFlags>
 		true_type has_overload2_opt(enable_for<overload2_opt_sig<Arg, Appender, FmtFlags>>*) { return { }; }
@@ -68,7 +68,7 @@ namespace std { namespace experimental
 		// Those accepting format arguments are considered more important (independent of efficiency) to ensure correct output.
 		// Within each group (with or without format options) overloads are sorted by (possible) efficiency of signature.
 		template<class Arg, class Appender, class FmtFlags, bool b1, bool b2, bool b3>
-		Appender dispatch_to_string(const Arg& arg, Appender& app, FmtFlags flags,
+		Appender dispatch_to_string(const Arg& arg, Appender app, FmtFlags flags,
 									integral_constant<bool, true> has_overload2_opt,
 									integral_constant<bool, b1> has_overload1_opt,
 									integral_constant<bool, b2> has_overload2,
@@ -78,7 +78,7 @@ namespace std { namespace experimental
 		}
 		
 		template<class Arg, class Appender, class FmtFlags, bool b1, bool b2>
-		Appender dispatch_to_string(const Arg& arg, Appender& app, FmtFlags flags,
+		Appender dispatch_to_string(const Arg& arg, Appender app, FmtFlags flags,
 									integral_constant<bool, false> has_overload2_opt,
 									integral_constant<bool, true> has_overload1_opt,
 									integral_constant<bool, b1> has_overload2,
@@ -90,7 +90,7 @@ namespace std { namespace experimental
 		
 		// Below do not accept format arguments
 		template<class Arg, class Appender, class FmtFlags, bool b1>
-		Appender dispatch_to_string(const Arg& arg, Appender& app, FmtFlags flags,
+		Appender dispatch_to_string(const Arg& arg, Appender app, FmtFlags flags,
 									integral_constant<bool, false> has_overload2_opt,
 									integral_constant<bool, false> has_overload1_opt,
 									integral_constant<bool, true> has_overload2,
@@ -100,7 +100,7 @@ namespace std { namespace experimental
 		}
 		
 		template<class Arg, class Appender, class FmtFlags>
-		Appender dispatch_to_string(const Arg& arg, Appender& app, FmtFlags flags,
+		Appender dispatch_to_string(const Arg& arg, Appender app, FmtFlags flags,
 									integral_constant<bool, false> has_overload2_opt,
 									integral_constant<bool, false> has_overload1_opt,
 									integral_constant<bool, false> has_overload2,
@@ -112,19 +112,19 @@ namespace std { namespace experimental
 		
 		// There is no to_string for basic_string and basic_string_view, handle it internally
 		template<class CharT, class Traits, class Appender, class FmtFlags>
-		Appender dispatch_to_string(const basic_string<CharT, Traits>& arg, Appender& app, FmtFlags flags)
+		Appender dispatch_to_string(const basic_string<CharT, Traits>& arg, Appender app, FmtFlags flags)
 		{
 			return app.append(arg);
 		}
 		
 		template<class CharT, class Traits, class Appender, class FmtFlags>
-		Appender dispatch_to_string(const basic_string_view<CharT, Traits>& arg, Appender& app, FmtFlags flags)
+		Appender dispatch_to_string(const basic_string_view<CharT, Traits>& arg, Appender app, FmtFlags flags)
 		{
 			return app.append(arg);
 		}
 		
 		template<class Arg, class Appender, class FmtFlags>
-		Appender dispatch_to_string(const Arg& arg, Appender& app, FmtFlags flags)
+		Appender dispatch_to_string(const Arg& arg, Appender app, FmtFlags flags)
 		{
 			return dispatch_to_string(arg, app, flags,
 									  has_overload2_opt<Arg, Appender, FmtFlags>(0),
