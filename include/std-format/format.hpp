@@ -9,8 +9,9 @@
 #ifndef std_format_format_hpp
 #define std_format_format_hpp
 
+#include <std-format/detail/format_appender.hpp>
 #include <std-format/integer_sequence.hpp>
-#include <std-format/string_view.hpp>
+#include <std-format/string.hpp>
 #include <std-format/type_traits.hpp>
 
 #include <algorithm>
@@ -201,23 +202,16 @@ namespace std { namespace experimental
 		format(basic_ostream<CharT, Traits>& os, basic_string_view<CharT, Traits> fmt, const Args&... args);
 	*/
 	//@}
-	
-	// Strangely these aren't defined in std
-	string to_string(char ch) { return { ch }; }
-	wstring to_string(wchar_t ch) { return { ch }; }
-	u16string to_string(char16_t ch) { return { ch }; }
-	u32string to_string(char32_t ch) { return { ch }; }
 }} // namespace std::experimental
 
-// Must be inclued after defining the std_format::to_string() and to_string() methods for primitive types not findable by ADL
+// Must be inclued after defining the std::experimental::to_string() and std::to_string() methods for primitive types not findable by ADL
 #include <std-format/detail/dispatch_to_string.hpp>
 
 // Require previous declarations of public names.
-#include <std-format/detail/appender.hpp>
 #include <std-format/detail/format_parser.hpp>
 #include <std-format/detail/format_validator.hpp>
 #include <std-format/detail/immediate_formatter.hpp>
-//#include <std-format/detail/formatter.hpp> // Currently disabled until the inline format case is mature enough and has a more or less stable implementation
+//#include <std-format/detail/formatter.hpp> // Currently disabled until the inline format case is mature enough and has a more or less stable implementation and interface
 
 namespace std { namespace experimental
 {

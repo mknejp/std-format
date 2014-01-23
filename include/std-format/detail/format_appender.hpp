@@ -6,8 +6,14 @@
 //  Copyright (c) 2014 Miro Knejp. All rights reserved.
 //
 
-#ifndef std_format_detail_appender_hpp
-#define std_format_detail_appender_hpp
+#ifndef std_format_detail_format_appender_hpp
+#define std_format_detail_format_appender_hpp
+
+#include <cassert>
+#include <iterator>
+#include <stdexcept>
+#include <std-format/string.hpp>
+#include <std-format/type_traits.hpp>
 
 namespace std { namespace experimental
 {
@@ -297,4 +303,4 @@ namespace std { namespace experimental
 	
 }} // namespace std::experimental
 
-#endif // std_format_detail_appender_hpp
+#endif // std_format_detail_format_appender_hpp

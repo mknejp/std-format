@@ -6,8 +6,8 @@
 //  Copyright (c) 2014 Miro Knejp. All rights reserved.
 //
 
-#ifndef std_format_string_view_hpp
-#define std_format_string_view_hpp
+#ifndef std_format_detail_string_view_hpp
+#define std_format_detail_string_view_hpp
 
 #include <string>
 
@@ -48,4 +48,4 @@ namespace std { namespace experimental
 	using u32string_view = basic_string_view<char32_t>;
 }} // namespace std::experimental
 
-#endif // std_format_string_view_hpp
+#endif // std_format_detail_string_view_hpp
