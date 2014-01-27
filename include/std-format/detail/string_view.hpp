@@ -37,6 +37,16 @@ namespace std { namespace experimental
 		const CharT* data() const noexcept { return _str; }
 		size_t size() const noexcept { return _len; }
 		
+		basic_string_view remove_prefix(size_t n)
+		{
+			return { _str + 1, _len - 1};
+		}
+		
+		bool starts_with(const basic_string_view& other)
+		{
+			return other.size() <= size() && Traits::compare(data(), other.data(), other.size()) == 0;
+		}
+		
 	private:
 		const CharT* _str;
 		size_t _len;
