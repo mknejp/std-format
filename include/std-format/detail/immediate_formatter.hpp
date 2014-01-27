@@ -72,9 +72,10 @@ public:
 		auto values = std::tie(args...);
 		detail::format_parser<value_type, traits_type> parser;
 		parser(_fmt.begin(), _fmt.end(), sizeof...(Args),
-			   [&] (format_iterator first, format_iterator last) { app.append(format_type{first, last - first}); },
-			   [&] (unsigned int n, unsigned int arg, int width, basic_string_view<CharT, Traits> options)
+			   [&] (format_type string) { app.append(string); },
+			   [&] (unsigned int n, unsigned int arg, int width, format_type options)
 			   {
+				   // TODO: Right now aligning is completely ignorant of multibyte characters. This needs to be supported somehow.
 				   if(width > 0)
 				   {
 					   // Positive width means right alignment.

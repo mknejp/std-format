@@ -48,8 +48,8 @@ public:
 		// All we do here is let the parser do it's job.
 		// If it doesn't throw the format string doesn't violate any syntactic rules and all indices are valid.
 		parser(_fmt.begin(), _fmt.end(), nargs,
-			   [&] (format_iterator first, format_iterator last) { },
-			   [&] (unsigned int n, unsigned int arg, int width, basic_string_view<CharT, Traits> options) { }
+			   [&] (format_type string) { },
+			   [&] (unsigned int n, unsigned int arg, int width, format_type options) { }
 			   );
 	}
 

@@ -117,7 +117,7 @@ void std::experimental::detail::format_parser<CharT, Traits>
 			// The format options contain escaped braces.
 			// We need to skip over all those and assemble the escaped string in our temporary buffer before passing to formatCallback
 			temp.clear();
-			copy_until_unescaped(pos, rbrace, [&] (FormatIter a, FormatIter b) { temp.append(a, b); });
+			copy_until_unescaped(pos, rbrace, [&] (basic_string_view<CharT, Traits> s) { temp.append(s.begin(), s.end()); });
 			formatCallback(n, index, width, { temp.data(), temp.size() });
 		}
 		else
@@ -134,14 +134,14 @@ auto std::experimental::detail::format_parser<CharT, Traits>
 	while(true)
 	{
 		auto brace = nextBrace(first, last);
-		copyCallback(first, brace);
+		copyCallback(basic_string_view<CharT, Traits>{ first, brace - first });
 		if(brace == last)
 			return last;
 		else
 		{
 			if(*(brace + 1) == *brace)
 			{
-				copyCallback(brace, brace + 1);
+				copyCallback(basic_string_view<CharT, Traits>{ brace, 1 });
 				first = brace + 2;
 			}
 			else
