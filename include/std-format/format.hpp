@@ -209,7 +209,6 @@ namespace std { namespace experimental
 
 // Require previous declarations of public names.
 #include <std-format/detail/format_parser.hpp>
-#include <std-format/detail/format_validator.hpp>
 #include <std-format/detail/immediate_formatter.hpp>
 //#include <std-format/detail/formatter.hpp> // Currently disabled until the inline format case is mature enough and has a more or less stable implementation and interface
 
@@ -266,15 +265,18 @@ auto std::experimental::format(in_place_t, Destination& dest, const FormatSource
 template<class CharT, class Traits>
 void std::experimental::validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs)
 {
-	detail::format_validator<CharT, Traits> v{fmt};
-	v(nargs);
+	// All we do here is let the parser do it's job.
+	// If it doesn't throw the format string doesn't violate any syntactic rules and all indices are valid.
+	for(auto part : parse_format<CharT, Traits>(fmt, nargs))
+		;
 }
 
 template<class CharT, class Traits>
 bool std::experimental::validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs, nothrow_t) noexcept
 {
-	detail::format_validator<CharT, Traits> v{fmt};
-	return v(nargs, nothrow);
+	try { validate_format(fmt, nargs); }
+	catch(...) { return false; }
+	return true;
 }
 
 /*

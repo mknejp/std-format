@@ -70,40 +70,41 @@ public:
 		format_delegates<Tuple, decltype(make_format_appender(temp)), format_type, make_index_sequence<sizeof...(Args)>> delegates2;
 		
 		auto values = std::tie(args...);
-		detail::format_parser<value_type, traits_type> parser;
-		parser(_fmt.begin(), _fmt.end(), sizeof...(Args),
-			   [&] (format_type string) { app.append(string); },
-			   [&] (unsigned int n, unsigned int arg, int width, format_type options)
-			   {
-				   // TODO: Right now aligning is completely ignorant of multibyte characters. This needs to be supported somehow.
-				   if(width > 0)
-				   {
-					   // Positive width means right alignment.
-					   // In that case we need to format the substring first to determine its length so we can add the padding.
-					   // Padding is done using the space ' ' character.
-					   temp.clear();
-					   delegates2[arg](values, make_format_appender(temp), options);
-					   for (auto i = temp.size(); i < width; ++i)
-						   app.append(CharT(' '));
-					   app.append(temp);
-				   }
-				   else if(width < 0)
-				   {
-					   // Otherwise we can fill the destination directly and append padding if necessary
-					   // Padding is done using the space ' ' character.
-					   auto start = app.write_count();
-					   app = delegates1[arg](values, app, options);
-					   auto end = app.write_count();
-					   while(end < start - width)
-					   {
-						   app.append(CharT(' '));
-						   ++end;
-					   }
-				   }
-				   else
-					   app = delegates1[arg](values, app, options);
-			   }
-		);
+		for(auto component : parse_format(_fmt, sizeof...(Args)))
+		{
+			if(component.type == format_component_type::static_substring)
+				app.append(component.substring);
+			else if(component.type == format_component_type::format_argument)
+			{
+				// TODO: Right now aligning is completely ignorant of multibyte characters. This needs to be supported somehow.
+				if(component.width > 0)
+				{
+					// Positive width means right alignment.
+					// In that case we need to format the substring first to determine its length so we can prepend the padding.
+					// Padding is done using the space ' ' character.
+					temp.clear();
+					delegates2[component.index](values, make_format_appender(temp), component.substring);
+					for (auto i = temp.size(); i < component.width; ++i)
+						app.append(CharT(' '));
+					app.append(temp);
+				}
+				else if(component.width < 0)
+				{
+					// Otherwise we can fill the destination directly and append padding if necessary
+					// Padding is done using the space ' ' character.
+					auto start = app.write_count();
+					app = delegates1[component.index](values, app, component.substring);
+					auto end = app.write_count();
+					while(end < start - component.width)
+					{
+						app.append(CharT(' '));
+						++end;
+					}
+				}
+				else
+					app = delegates1[component.index](values, app, component.substring);
+			}
+		}
 		return app;
 	}
 	
