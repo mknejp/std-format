@@ -22,4 +22,6 @@ namespace std { namespace experimental
 	
 }} // namespace std::experimental
 
+#include <std-format/detail/to_string.hpp>
+
 #endif

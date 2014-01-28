@@ -23,11 +23,12 @@ namespace std { namespace experimental
 		using traits_type = Traits;
 		using value_type = CharT;
 		
-		basic_string_view(const value_type* str) : _str(str), _len(strlen(str)) { }
+		basic_string_view() : basic_string_view("", "") { }
+		basic_string_view(const value_type* str) : basic_string_view(str, strlen(str)) { }
 		basic_string_view(const value_type* str, size_t len) : _str(str), _len(len) { }
-		basic_string_view(const_iterator begin, const_iterator end) : _str(begin), _len(end - begin) { }
+		basic_string_view(const_iterator begin, const_iterator end) : basic_string_view(begin, end - begin) { }
 		template<class Allocator>
-		basic_string_view(const basic_string<CharT, Traits, Allocator>& str) : _str(str.data()), _len(str.size()) { }
+		basic_string_view(const basic_string<CharT, Traits, Allocator>& str) : basic_string_view(str.data(), str.size()) { }
 		
 		iterator begin() const noexcept { return _str; }
 		iterator end() const noexcept { return _str + _len; }

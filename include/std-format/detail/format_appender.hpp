@@ -9,10 +9,12 @@
 #ifndef std_format_detail_format_appender_hpp
 #define std_format_detail_format_appender_hpp
 
+#include <std-format/detail/string_view.hpp>
+
 #include <cassert>
 #include <iterator>
 #include <stdexcept>
-#include <std-format/string.hpp>
+#include <string>
 #include <std-format/type_traits.hpp>
 
 namespace std { namespace experimental
