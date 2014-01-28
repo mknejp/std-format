@@ -17,12 +17,12 @@ namespace std { namespace experimental
 		class immediate_formatter;
 		
 		template<class Args, class Appender, class FmtFlags>
-		using format_signature = function<Appender(const Args&, Appender, const FmtFlags&)> ;
+		using format_signature = function<size_t(const Args&, Appender&, const FmtFlags&)> ;
 		
 		template<class Args, class Appender, class FmtFlags, size_t N>
 		constexpr format_signature<Args, Appender, FmtFlags> make_format_delegate()
 		{
-			return [] (const Args& args, Appender app, const FmtFlags& flags)
+			return [] (const Args& args, Appender& app, const FmtFlags& flags)
 			{
 				return dispatch_to_string(get<N>(args), app, flags);
 			};
@@ -62,12 +62,14 @@ public:
 	explicit immediate_formatter(T&& fmt) : _fmt(std::forward<T>(fmt)) { }
 
 	template<class Appender>
-	Appender operator() (Appender app, const Args&... args)
+	size_t operator() (Appender& app, const Args&... args)
 	{
 		basic_string<CharT, Traits> temp; // This buffer is used for all temporaries we need, thus hopefully minimizing the number of reallocations
 		
 		format_delegates<Tuple, Appender, format_type, make_index_sequence<sizeof...(Args)>> delegates1;
 		format_delegates<Tuple, decltype(make_format_appender(temp)), format_type, make_index_sequence<sizeof...(Args)>> delegates2;
+		
+		size_t printed = 0;
 		
 		auto values = std::tie(args...);
 		for(auto component : parse_format(_fmt, sizeof...(Args)))
@@ -83,29 +85,28 @@ public:
 					// In that case we need to format the substring first to determine its length so we can prepend the padding.
 					// Padding is done using the space ' ' character.
 					temp.clear();
-					delegates2[component.index](values, make_format_appender(temp), component.substring);
-					for (auto i = temp.size(); i < component.width; ++i)
+					auto tempApp = make_format_appender(temp);
+					auto n = delegates2[component.index](values, tempApp, component.substring);
+					printed += n;
+					for ( ; n < component.width; ++n, ++printed)
 						app.append(CharT(' '));
 					app.append(temp);
 				}
 				else if(component.width < 0)
 				{
+					component.width = -component.width;
 					// Otherwise we can fill the destination directly and append padding if necessary
 					// Padding is done using the space ' ' character.
-					auto start = app.write_count();
-					app = delegates1[component.index](values, app, component.substring);
-					auto end = app.write_count();
-					while(end < start - component.width)
-					{
+					auto n = delegates1[component.index](values, app, component.substring);
+					printed += n;
+					for ( ; n < component.width; ++n, ++printed)
 						app.append(CharT(' '));
-						++end;
-					}
 				}
 				else
-					app = delegates1[component.index](values, app, component.substring);
+					printed += delegates1[component.index](values, app, component.substring);
 			}
 		}
-		return app;
+		return printed;
 	}
 	
 private:

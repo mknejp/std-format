@@ -92,6 +92,10 @@ namespace std { namespace experimental
 			template<class CharT, class Traits, class Allocator>
 			Derived& append(const basic_string<CharT, Traits, Allocator>& str) { return append(str.data(), str.size()); }
 			
+		protected:
+			iterator_appender(iterator_appender&&) = default;
+			iterator_appender& operator= (iterator_appender&&) = default;
+			
 		private:
 			OutIter _iter;
 		};
@@ -127,6 +131,10 @@ namespace std { namespace experimental
 			template<class CharT, class Traits, class Allocator>
 			Derived& append(const basic_string<CharT, Traits, Allocator>& str) { return append(str.data(), str.size()); }
 
+		protected:
+			range_checked_appender(range_checked_appender&&) = default;
+			range_checked_appender& operator= (range_checked_appender&&) = default;
+			
 		private:
 			void append_block(const value_type* str, size_t len, random_access_iterator_tag)
 			{
@@ -178,6 +186,10 @@ namespace std { namespace experimental
 			template<class Allocator>
 			Derived& append(const basic_string<CharT, Traits, Allocator>& str) { return append(str.data(), str.size()); }
 			
+		protected:
+			ostreambuf_iterator_appender(ostreambuf_iterator_appender&&) = default;
+			ostreambuf_iterator_appender& operator= (ostreambuf_iterator_appender&&) = default;
+			
 		private:
 			ostreambuf_iterator<CharT, Traits> _iter;
 		};
@@ -211,6 +223,10 @@ namespace std { namespace experimental
 			template<class Allocator>
 			Derived& append(const basic_string<CharT, Traits, Allocator>& str) { return append(str.data(), str.size()); }
 
+		protected:
+			streambuf_appender(streambuf_appender&&) = default;
+			streambuf_appender& operator= (streambuf_appender&&) = default;
+			
 		private:
 			basic_streambuf<CharT, Traits>* _buf;
 		};
@@ -240,6 +256,10 @@ namespace std { namespace experimental
 			Derived& append(const basic_string_view<CharT, Traits>& str) { return append(str.data(), str.size()); }
 			template<class Allocator2>
 			Derived& append(const basic_string<CharT, Traits, Allocator2>& str) { return append(str.data(), str.size()); }
+			
+		protected:
+			string_appender(string_appender&&) = default;
+			string_appender& operator= (string_appender&&) = default;
 			
 		private:
 			basic_string<CharT, Traits, Allocator>* _str;
@@ -280,7 +300,6 @@ namespace std { namespace experimental
 		using Base = decltype(detail::select_appender<format_appender<Sink>>(declval<Sink>()));
 		
 	public:
-		using type = format_appender<Sink>;
 		using Base::Base;
 		
 		size_t write_count() const { return _count.write_count(); }
@@ -293,15 +312,16 @@ namespace std { namespace experimental
 		detail::write_counter _count;
 	};
 	
+	// Prevent format_appender<format_appender<...>> nesting
 	template<class Sink>
-	class format_appender<format_appender<Sink>> : public format_appender<Sink>
-	{
-	public:
-		using type = typename format_appender<Sink>::type;
-	};
+	format_appender<Sink>& make_format_appender(format_appender<Sink>& app) { return app; }
+	template<class Sink>
+	format_appender<Sink>& make_format_appender(format_appender<Sink>&& app) { return app; }
 	
-	template<class T>
-	typename format_appender<decay_t<T>>::type make_format_appender(T&& t) { return { forward<T>(t) }; }
+	template<class Sink>
+	format_appender<decay_t<Sink>> make_format_appender(Sink& t) { return { t }; }
+	template<class Sink>
+	format_appender<decay_t<Sink>> make_format_appender(Sink&& t) { return { t }; }
 	
 }} // namespace std::experimental
 

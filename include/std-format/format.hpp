@@ -79,6 +79,9 @@ namespace std { namespace experimental
 		using string_type = basic_string<char_type<T>, traits_type<T>, Allocator>;
 	}
 	
+	/// \name Format string validation
+	//@{
+	
 	template<class CharT, class Traits>
 	void validate_format(basic_string_view<CharT, Traits> fmt, size_t nargs);
 	
@@ -103,7 +106,8 @@ namespace std { namespace experimental
 	template<class... Args, class CharT>
 	bool validate_format(const CharT* fmt, nothrow_t) noexcept { return validate_format<Args...>(basic_string_view<CharT>{fmt}, nothrow); }
 	
-	/// \name Overloads accepting `formatter`
+	//@}
+	/// \name Main format method
 	//@{
 	
 	template<class Result, class FormatSource, class... Args>
@@ -127,80 +131,8 @@ namespace std { namespace experimental
 	}
 	
 	template<class Destination, class FormatSource, class... Args>
-	auto format(in_place_t, Destination& dest, const FormatSource& fmt, const Args&... args)
-		-> Destination&;
-/*
-	template<class FormatSource, class... Args1, class... Args2>
-	auto format(const formatter<FormatSource, Args1...>& fmt, const Args2&... args)
-		-> typename formatter<FormatSource, Args1...>::result_type
-	{
-		static_assert(sizeof...(Args1) == sizeof...(Args2), "Number of arguments does not match formatter type.");
-		// Diagnose incompatible types
-		return fmt(args...);
-	}
-	
-	template<class CharT, class Traits, class FormatSource, class... Args1, class... Args2>
-	void format(basic_streambuf<CharT, Traits>& buf, const formatter<FormatSource, Args1...>& fmt, const Args2&... args)
-	{
-		static_assert(sizeof...(Args1) == sizeof...(Args2), "Number of arguments does not match formatter type.");
-		return fmt(buf, args...);
-	}
-	
-	template<class CharT, class Traits, class FormatSource, class... Args1, class... Args2>
-	auto format(basic_ostream<CharT, Traits>& os, const formatter<FormatSource, Args1...>& fmt, const Args2&... args)
-		-> basic_ostream<CharT, Traits>&
-	{
-		static_assert(sizeof...(Args1) == sizeof...(Args2), "Number of arguments does not match formatter type.");
-		return fmt(os, args...);
-	}
-	
-	template<class CharT, class Traits, class Allocator, class FormatSource, class... Args1, class... Args2>
-	void format(basic_string<CharT, Traits, Allocator>& str, const formatter<FormatSource, Args1...>& fmt, const Args2&... args)
-	{
-		static_assert(sizeof...(Args1) == sizeof...(Args2), "Number of arguments does not match formatter type.");
-		return fmt(str, args...);
-	}
-	
-	/// \name Overloads accepting `const char*`-like formats
-	//@{
-	
-	template<class CharT, class... Args>
-	auto format(const CharT* fmt, const Args&... args) -> basic_string<CharT>;
-	
-	template<class CharT, class Traits, class... Args>
-	void format(basic_streambuf<CharT, Traits>& buf, const CharT* fmt, const Args&... args);
-	
-	template<class CharT, class Traits, class... Args>
-	basic_ostream<CharT, Traits>& format(basic_ostream<CharT, Traits>& os, const CharT* fmt, const Args&... args);
-	
-	//@}
-	/// \name Overloads accepting `basic_string` formats
-	//@{
-	
-	template<class CharT, class Traits, class Allocator, class... Args>
-	auto format(const basic_string<CharT, Traits, Allocator>& fmt, const Args&... args) -> basic_string<CharT, Traits, Allocator>;
-	
-	template<class CharT, class Traits, class Allocator, class... Args>
-	void format(basic_streambuf<CharT, Traits>& buf, const basic_string<CharT, Traits, Allocator>& fmt, const Args&... args);
-	
-	template<class CharT, class Traits, class Allocator, class... Args>
-	basic_ostream<CharT, Traits>&
-		format(basic_ostream<CharT, Traits>& os, const basic_string<CharT, Traits, Allocator>& fmt, const Args&... args);
-	
-	//@}
-	/// \name Overloads accepting `basic_string_view` formats
-	//@{
-	
-	template<class CharT, class Traits, class... Args>
-	auto format(basic_string_view<CharT, Traits> fmt, const Args&... args) -> basic_string<CharT, Traits>;
-	
-	template<class CharT, class Traits, class... Args>
-	void format(basic_streambuf<CharT, Traits>& buf, basic_string_view<CharT, Traits> fmt, const Args&... args);
-	
-	template<class CharT, class Traits, class... Args>
-	basic_ostream<CharT, Traits>&
-		format(basic_ostream<CharT, Traits>& os, basic_string_view<CharT, Traits> fmt, const Args&... args);
-	*/
+	size_t format(in_place_t, Destination& dest, const FormatSource& fmt, const Args&... args);
+
 	//@}
 }} // namespace std::experimental
 
@@ -220,19 +152,19 @@ namespace std { namespace experimental
 		using std::end;
 		
 		template<class Appender, class FormatSource, class... Args>
-		auto format_impl(Appender& app, const FormatSource& fmt, const Args&... args)
-			-> decltype(app = fmt(app, args...))
+		auto format_impl(Appender&& app, const FormatSource& fmt, const Args&... args)
+			-> decltype(fmt(app, args...))
 		{
-			app = fmt(app, args...);
+			return fmt(app, args...);
 		}
 		template<class Appender, class FormatSource, class... Args>
-		void format_impl(Appender& app, const FormatSource& fmt, const Args&... args)
+		size_t format_impl(Appender&& app, const FormatSource& fmt, const Args&... args)
 		{
 			using CharT = detail::char_type<FormatSource>;
 			using Traits = detail::traits_type<FormatSource>;
 			
 			detail::immediate_formatter<CharT, Traits, Args...> formatter{fmt};
-			app = formatter(app, args...);
+			return formatter(app, args...);
 		}
 	}
 	
@@ -254,12 +186,9 @@ auto std::experimental::format(allocator_arg_t, const Allocator& alloc, const Fo
 }
 
 template<class Destination, class FormatSource, class... Args>
-auto std::experimental::format(in_place_t, Destination& dest, const FormatSource& fmt, const Args&... args)
-	-> Destination&
+size_t std::experimental::format(in_place_t, Destination& dest, const FormatSource& fmt, const Args&... args)
 {
-	auto app = make_format_appender(dest);
-	detail::format_impl(app, fmt, args...);
-	return dest;
+	return detail::format_impl(make_format_appender(dest), fmt, args...);
 }
 
 template<class CharT, class Traits>
@@ -279,85 +208,4 @@ bool std::experimental::validate_format(basic_string_view<CharT, Traits> fmt, si
 	return true;
 }
 
-/*
-template<class CharT, class... Args>
-auto std::experimental::format(const CharT* fmt, const Args&... args) -> basic_string<CharT>
-{
-	assert(fmt && "Format string is NULL");
-	using String = basic_string_view<CharT>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	return formatter(args...);
-}
-
-template<class CharT, class Traits, class... Args>
-void std::experimental::format(basic_streambuf<CharT, Traits>& buf, const CharT* fmt, const Args&... args)
-{
-	assert(fmt && "Format string is NULL");
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	formatter(buf, args...);
-}
-
-template<class CharT, class Traits, class... Args>
-auto std::experimental::format(basic_ostream<CharT, Traits>& os, const CharT* fmt, const Args&... args)
-	-> basic_ostream<CharT, Traits>&
-{
-	assert(fmt && "Format string is NULL");
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	return formatter(os, args...);
-}
-
-template<class CharT, class Traits, class Allocator, class... Args>
-auto std::experimental::format(const basic_string<CharT, Traits, Allocator>& fmt, const Args&... args)
-	-> basic_string<CharT, Traits, Allocator>
-{
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	return formatter(args...);
-}
-
-template<class CharT, class Traits, class Allocator, class... Args>
-void std::experimental::format(basic_streambuf<CharT, Traits>& buf, const basic_string<CharT, Traits, Allocator>& fmt, const Args&... args)
-{
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	formatter(buf, args...);
-}
-
-template<class CharT, class Traits, class Allocator, class... Args>
-auto std::experimental::format(basic_ostream<CharT, Traits>& os, const basic_string<CharT, Traits, Allocator>& fmt, const Args&... args)
-	-> basic_ostream<CharT, Traits>&
-{
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	return formatter(os, args...);
-}
-
-template<class CharT, class Traits, class... Args>
-auto std::experimental::format(basic_string_view<CharT, Traits> fmt, const Args&... args)
-	-> basic_string<CharT, Traits>
-{
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	return formatter(args...);
-}
-
-template<class CharT, class Traits, class... Args>
-void std::experimental::format(basic_streambuf<CharT, Traits>& buf, basic_string_view<CharT, Traits> fmt, const Args&... args)
-{
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	formatter(buf, args...);
-}
-
-template<class CharT, class Traits, class... Args>
-auto std::experimental::format(basic_ostream<CharT, Traits>& os, basic_string_view<CharT, Traits> fmt, const Args&... args)
-	-> basic_ostream<CharT, Traits>&
-{
-	using String = basic_string_view<CharT, Traits>;
-	detail::immediate_formatter<String, Args...> formatter{fmt};
-	return formatter(os, args...);
-}
-*/
 #endif // std_format_format_hpp

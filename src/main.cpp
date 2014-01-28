@@ -21,9 +21,10 @@ namespace test
 	};
 	
 	template<class T, class CharT, class Traits>
-	format_appender<T> to_string(PrintOptions, format_appender<T> app, basic_string_view<CharT, Traits> options)
+	size_t to_string(PrintOptions, format_appender<T>& app, basic_string_view<CharT, Traits> options)
 	{
-		return app.append(options.data(), options.size());
+		app.append(options.data(), options.size());
+		return options.size();
 	}
 }
 
@@ -63,9 +64,9 @@ int main()
 	format(allocator_arg, allocator<char>{}, "{0}\n", 1);
 	format<string>(allocator_arg, allocator<char>{}, "{0}\n", 1);
 	
-	app = format(in_place, app, u8"{0,10:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
-	app = format(in_place, app, u8"{0,-10:a{{sdf} {2} {1}\n", test::PrintOptions(), 2, 3);
-	app = format(in_place, app, u8"{0,-10} {1:dfgh} {2}\n", 1, test::PrintOptions(), 3);
-//	app = format(in_place, app, u8"{0456789876543456789876543}\n", 1);
+	format(in_place, app, u8"{0,10:}}as{{df{{}}} {2} {1}\n", test::PrintOptions(), 2, 3);
+	format(in_place, app, u8"{0,-10:a{{sdf} {2} {1}\n", test::PrintOptions(), 2, 3);
+	format(in_place, app, u8"{0,-10} {1:dfgh} {2}\n", 1, test::PrintOptions(), 3);
+//	format(in_place, app, u8"{0456789876543456789876543}\n", 1);
 	copy(v.begin(), v.end(), ostream_iterator<char>(cout));
 }
