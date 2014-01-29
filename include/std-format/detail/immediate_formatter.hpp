@@ -62,7 +62,7 @@ public:
 	explicit immediate_formatter(T&& fmt) : _fmt(std::forward<T>(fmt)) { }
 
 	template<class Appender>
-	size_t operator() (Appender& app, const Args&... args)
+	size_t operator() (Appender& app, const Args&... args) const
 	{
 		basic_string<CharT, Traits> temp; // This buffer is used for all temporaries we need, thus hopefully minimizing the number of reallocations
 		
@@ -78,30 +78,10 @@ public:
 				app.append(component.substring);
 			else if(component.type == format_component_type::format_argument)
 			{
-				// TODO: Right now aligning is completely ignorant of multibyte characters. This needs to be supported somehow.
 				if(component.width > 0)
-				{
-					// Positive width means right alignment.
-					// In that case we need to format the substring first to determine its length so we can prepend the padding.
-					// Padding is done using the space ' ' character.
-					temp.clear();
-					auto tempApp = make_format_appender(temp);
-					auto n = delegates2[component.index](values, tempApp, component.substring);
-					printed += n;
-					for ( ; n < component.width; ++n, ++printed)
-						app.append(CharT(' '));
-					app.append(temp);
-				}
+					printed += right_align(app, component, values, temp, delegates2);
 				else if(component.width < 0)
-				{
-					component.width = -component.width;
-					// Otherwise we can fill the destination directly and append padding if necessary
-					// Padding is done using the space ' ' character.
-					auto n = delegates1[component.index](values, app, component.substring);
-					printed += n;
-					for ( ; n < component.width; ++n, ++printed)
-						app.append(CharT(' '));
-				}
+					printed += left_align(app, component, values, delegates1);
 				else
 					printed += delegates1[component.index](values, app, component.substring);
 			}
@@ -110,6 +90,32 @@ public:
 	}
 	
 private:
+	template<class Appender, class Component, class Values, class Delegates>
+	static size_t right_align(Appender& app, Component& component, Values& values, basic_string<CharT, Traits>& temp, Delegates& delegates)
+	{
+		// Format the substring first to determine its length and prepend the padding if necessary.
+		// Padding is done using the space ' ' character.
+		temp.clear();
+		auto app2 = make_format_appender(temp);
+		auto n = delegates[component.index](values, app2, component.substring);
+		for ( ; n < component.width; ++n)
+			app.append(CharT(' '));
+		app.append(temp);
+		return n;
+	}
+	
+	template<class Appender, class Component, class Values, class Delegates>
+	static size_t left_align(Appender& app, Component& component, Values& values, Delegates& delegates)
+	{
+		// Fill the destination directly and append padding if necessary.
+		// Padding is done using the space ' ' character.
+		component.width = -component.width;
+		auto n = delegates[component.index](values, app, component.substring);
+		for ( ; n < component.width; ++n)
+			app.append(CharT(' '));
+		return n;
+	}
+	
 	format_type _fmt;
 };
 
