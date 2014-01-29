@@ -14,6 +14,7 @@
 namespace std { namespace experimental
 {
 	template<class T> using decay_t = typename decay<T>::type;
+	template<class T> using make_unsigned_t = typename make_unsigned<T>::type;
 	
 }} // namespace std::experimental
 

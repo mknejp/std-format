@@ -37,6 +37,7 @@
 		CF9FDE771891CF2C00EA2472 /* string.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = string.hpp; sourceTree = "<group>"; };
 		CF9FDE781891CF9600EA2472 /* to_string.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = to_string.hpp; sourceTree = "<group>"; };
 		CF9FDE791891CFE900EA2472 /* string_view.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = string_view.hpp; sourceTree = "<group>"; };
+		CF9FDE7A1891E93400EA2472 /* parse_tools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parse_tools.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +90,7 @@
 				CF7E6EED1889F30000F11A7E /* format_parser.hpp */,
 				CF7E6EEC1889F30000F11A7E /* formatter.hpp */,
 				CF7E6EEE1889F30000F11A7E /* immediate_formatter.hpp */,
+				CF9FDE7A1891E93400EA2472 /* parse_tools.hpp */,
 				CF9FDE791891CFE900EA2472 /* string_view.hpp */,
 				CF9FDE781891CF9600EA2472 /* to_string.hpp */,
 			);
